@@ -47,6 +47,8 @@ func main() {
 
 	mux.HandleFunc("GET /hello", helloHandler)
 
+	
+
 	handler := logger(mux)
 	if err := http.ListenAndServe(":8012", handler); err != nil {
 		log.Fatal(err)
