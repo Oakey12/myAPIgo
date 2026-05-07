@@ -1,0 +1,43 @@
+Написать HTTP-сервер на чистой стандартной библиотеке, который:
+	•	Отвечает на GET /ping → {"status": "ok"}
+	•	Отвечает на GET /hello?name=Alice → {"message": "Hello, Alice"}
+	•	Отвечает 404 на другие пути
+	•	Логирует каждый запрос в консоль (метод, путь, время ответа)
+1. Узнать, что происходит, когда вы вводите URL в браузере
+
+https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/First_steps/Client-Server_overview
+https://javarush.com/quests/lectures/ru.javarush.golang.core.lecture.level57.lecture03
+
+2. HTTP — что это и как работает
+
+https://developer.mozilla.org/en-US/docs/Web/HTTP
+
+3. Структура HTTP запроса и ответа
+
+https://ics.uci.edu/~thornton/icsh32/Notes/HTTP/
+https://github.com/danthemo/myapp
+
+4. Методы HTTP: GET и POST
+https://github.com/ArtyomMishkin/helloapi
+
+5. OSI и сетевая модель, на каком уровне там находится HTTP
+
+
+___________________________________________________________
+func jsonResponse(w http.ResponseWriter, status int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	if err := json.NewEncoder(w).Encode(payload); err != nil {
+		log.Printf("Error encoding JSON: %v", err)
+	}
+
+}
+
+func pingHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string]string{})
+}
