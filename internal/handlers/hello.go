@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -15,6 +16,6 @@ func HelloHandler(w http.ResponseWriter, r *http.Request) {
 		"message": "Hello " + name,
 	})
 	if err != nil {
-		return
+		fmt.Printf("Ошибка при кодировании JSON: %v", err)
 	}
 }
