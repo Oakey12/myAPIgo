@@ -24,20 +24,10 @@ https://github.com/ArtyomMishkin/helloapi
 
 
 ___________________________________________________________
-func jsonResponse(w http.ResponseWriter, status int, payload interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
 
-	if err := json.NewEncoder(w).Encode(payload); err != nil {
-		log.Printf("Error encoding JSON: %v", err)
-	}
-
-}
-
-func pingHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	jsonResponse(w, http.StatusOK, map[string]string{})
-}
+________________________________задание 2__________________
+Метод Путь Что делает Пример тела запроса
+POST /notes Создать новую заметку {"title": "купить молоко", "content": "не забыть"}
+GET      /notes/{id} Получить заметку по ID
+GET      /notes           Получить все заметки
+DELETE /notes/{id} Удалить заметку
