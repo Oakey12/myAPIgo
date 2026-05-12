@@ -48,7 +48,7 @@ func (ns *NoteStore) GetOneNote(id int) (Note, bool) {
 
 // Метод для получения всех заметок
 func (ns *NoteStore) GetAllNotes() []Note {
-	ns.mu.Unlock()
+	ns.mu.Lock()
 	defer ns.mu.Unlock()
 
 	notes := make([]Note, 0, len(ns.data))

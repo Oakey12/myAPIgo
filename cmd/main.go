@@ -24,7 +24,7 @@ func main() {
 	mux.HandleFunc("POST /notes", noteHandler.CreateNote)
 	mux.HandleFunc("GET /notes/{id}", noteHandler.GetNoteID)
 	mux.HandleFunc("GET /notes", noteHandler.GetAllNote)
-	mux.HandleFunc("DELETE /notes{id}", noteHandler.DeleteNote)
+	mux.HandleFunc("DELETE /notes/{id}", noteHandler.DeleteNote)
 
 	fmt.Println("Server running!")
 
