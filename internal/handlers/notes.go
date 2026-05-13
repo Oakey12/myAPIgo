@@ -26,7 +26,7 @@ func (nh *NoteHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	createNote := nh.Store.SaveNote(request.Title, request.Content)
-	w.Header().Set("Content-Type", "applicatin/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createNote)
 }

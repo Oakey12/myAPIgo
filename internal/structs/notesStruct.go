@@ -15,7 +15,7 @@ type NoteStore struct {
 	lastId int
 }
 
-func NewNoteSore() *NoteStore {
+func NewNoteStore() *NoteStore {
 	return &NoteStore{
 		data: make(map[int]Note),
 	}

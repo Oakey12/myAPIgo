@@ -12,7 +12,7 @@ import (
 
 func main() {
 
-	store := structs.NewNoteSore()
+	store := structs.NewNoteStore()
 
 	noteHandler := &handlers.NoteHandler{Store: store}
 
