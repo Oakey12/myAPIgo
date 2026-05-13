@@ -39,8 +39,8 @@ func (nh *NoteHandler) GetNoteID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Неверный ID", http.StatusBadRequest)
 		return
 	}
-	note, exists := nh.Store.GetOneNote(id)
-	if !exists {
+	note, ok := nh.Store.GetOneNote(id)
+	if !ok {
 		http.Error(w, "Заметка не найдена", http.StatusNotFound)
 		return
 	}
@@ -73,5 +73,32 @@ func (nh *NoteHandler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"status": "ok",
 	})
+}
 
+// PUT Полное обновление заметки
+func (nh *NoteHandler) UpdateNote(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Неверный ID", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+		return
+	}
+
+	defer r.Body.Close()
+	updateNote, ok := nh.Store.Update(id, req.Title, req.Content)
+	if !ok {
+		http.Error(w, "Заметка не найдена", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updateNote)
 }

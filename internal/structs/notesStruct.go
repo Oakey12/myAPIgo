@@ -64,9 +64,25 @@ func (ns *NoteStore) Delete(id int) bool {
 	ns.mu.Lock()
 	defer ns.mu.Unlock()
 
-	_, exists := ns.data[id]
-	if exists {
+	_, ok := ns.data[id]
+	if ok {
 		delete(ns.data, id)
 	}
-	return exists
+	return ok
+}
+
+// метод для полного изменения заметки PUT
+func (ns *NoteStore) Update(id int, title, content string) (Note, bool) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	_, ok := ns.data[id]
+	if !ok {
+		return Note{}, false
+	}
+
+	updateNote := Note{ID: id, Title: title, Content: content}
+	ns.data[id] = updateNote
+	return updateNote, true
+
 }
