@@ -42,8 +42,8 @@ func (ns *NoteStore) GetOneNote(id int) (Note, bool) {
 	ns.mu.Lock()
 	defer ns.mu.Unlock()
 
-	note, exists := ns.data[id]
-	return note, exists
+	note, ok := ns.data[id]
+	return note, ok
 }
 
 // Метод для получения всех заметок
