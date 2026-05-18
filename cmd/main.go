@@ -5,10 +5,18 @@ import (
 	"log"
 	"net/http"
 
+	_ "github.com/Oakey12/myAPIGo/docs"
 	"github.com/Oakey12/myAPIGo/internal/handlers"
 	"github.com/Oakey12/myAPIGo/internal/structs"
 	"github.com/Oakey12/myAPIGo/utils"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
+
+// @title           Notes API
+// @version         1.0
+// @description     Это учебный REST API сервис для управления заметками.
+// @host            localhost:8012
+// @BasePath        /
 
 func main() {
 
@@ -26,6 +34,11 @@ func main() {
 	mux.HandleFunc("GET /notes", noteHandler.GetAllNote)
 	mux.HandleFunc("DELETE /notes/{id}", noteHandler.DeleteNote)
 	mux.HandleFunc("PUT /notes/{id}", noteHandler.UpdateNote)
+	mux.HandleFunc("PATCH /notes/{id}", noteHandler.PatchNote)
+
+	mux.Handle("GET /swagger/", httpSwagger.WrapHandler)
+	log.Println("Server running on http://localhost:8012")
+	log.Println("Swagger documentation available on http://localhost:8012/swagger/index.html")
 
 	fmt.Println("Server running!")
 

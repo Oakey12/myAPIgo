@@ -1,0 +1,207 @@
+basePath: /
+definitions:
+  handlers.CreateNoteRequest:
+    properties:
+      content:
+        example: Молоко, хлеб, сыр
+        type: string
+      title:
+        example: Купить продукты
+        type: string
+    type: object
+  handlers.PatchNoteRequest:
+    properties:
+      content:
+        example: Новый контент заметки
+        type: string
+      title:
+        example: Новое название
+        type: string
+    type: object
+  handlers.UpdateNoteRequest:
+    properties:
+      content:
+        example: Обновленный текст заметки
+        type: string
+      title:
+        example: Обновленный заголовок
+        type: string
+    type: object
+  structs.Note:
+    properties:
+      content:
+        type: string
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+host: localhost:8012
+info:
+  contact: {}
+  description: Это учебный REST API сервис для управления заметками.
+  title: Notes API
+  version: "1.0"
+paths:
+  /notes:
+    get:
+      description: Возвращает массив всех сохраненных заметок
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/structs.Note'
+            type: array
+      summary: Получить все заметки
+      tags:
+      - notes
+    post:
+      consumes:
+      - application/json
+      description: Принимает заголовок и текст, генерирует ID и сохраняет в память
+      parameters:
+      - description: Данные заметки
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateNoteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/structs.Note'
+        "400":
+          description: Неверный формат JSON
+          schema:
+            type: string
+      summary: Создать новую заметку
+      tags:
+      - notes
+  /notes/{id}:
+    delete:
+      description: Удаляет заметку из памяти по её ID
+      parameters:
+      - description: Идентификатор заметки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'status: ok'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный ID
+          schema:
+            type: string
+        "404":
+          description: Заметка не найдена
+          schema:
+            type: string
+      summary: Удалить заметку
+      tags:
+      - notes
+    get:
+      description: Возвращает одну заметку по её числовому идентификатору
+      parameters:
+      - description: Идентификатор заметки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/structs.Note'
+        "400":
+          description: Неверный ID
+          schema:
+            type: string
+        "404":
+          description: Заметка не найдена
+          schema:
+            type: string
+      summary: Получить заметку по ID
+      tags:
+      - notes
+    patch:
+      consumes:
+      - application/json
+      description: Обновляет только переданные поля заметки (title и/или content).
+        Пропущенные поля остаются без изменений.
+      parameters:
+      - description: Идентификатор заметки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Поля для изменения
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PatchNoteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/structs.Note'
+        "400":
+          description: Неверный ID, формат JSON или пустой запрос
+          schema:
+            type: string
+      summary: Частично обновить заметку (PATCH)
+      tags:
+      - notes
+    put:
+      consumes:
+      - application/json
+      description: Заменяет все поля существующей заметки новыми данными. Требует
+        передачи и title, и content.
+      parameters:
+      - description: Идентификатор заметки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Новые данные заметки
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateNoteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/structs.Note'
+        "400":
+          description: Неверный ID или формат JSON
+          schema:
+            type: string
+        "404":
+          description: Заметка не найдена
+          schema:
+            type: string
+      summary: Полностью обновить заметку (PUT)
+      tags:
+      - notes
+swagger: "2.0"

@@ -86,3 +86,23 @@ func (ns *NoteStore) Update(id int, title, content string) (Note, bool) {
 	return updateNote, true
 
 }
+
+// PAtch обновление записи по конкретным параметрам
+func (ns *NoteStore) PatchNote(id int, title *string, context *string) (Note, bool) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	note, ok := ns.data[id]
+	if !ok {
+		return Note{}, false
+	}
+	if title != nil {
+		note.Title = *title
+	}
+	if context != nil {
+		note.Content = *context
+	}
+	ns.data[id] = note
+
+	return note, true
+}
