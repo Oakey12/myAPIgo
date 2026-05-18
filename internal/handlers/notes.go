@@ -148,10 +148,7 @@ func (nh *NoteHandler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req struct {
-		Title   string `json:"title"`
-		Content string `json:"content"`
-	}
+	var req UpdateNoteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
 		return
