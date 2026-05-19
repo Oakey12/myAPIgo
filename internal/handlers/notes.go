@@ -25,17 +25,6 @@ type PatchNoteRequest struct {
 	Content *string `json:"content" example:"Новый контент заметки"`
 }
 
-// POST для создания записи
-// CreateNote для создания записи
-// @Summary      Создать новую заметку
-// @Description  Принимает заголовок и текст, генерирует ID и сохраняет в память
-// @Tags         notes
-// @Accept       json
-// @Produce      json
-// @Param        input body CreateNoteRequest true "Данные заметки"
-// @Success      201  {object}  structs.Note
-// @Failure      400  {string}  string "Неверный формат JSON"
-// @Router       /notes [post]
 func (nh *NoteHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 	var request CreateNoteRequest
 
@@ -56,17 +45,6 @@ func (nh *NoteHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(createNote)
 }
 
-// GET получение заметки по ID
-// GetNoteID получение заметки по ID
-// @Summary      Получить заметку по ID
-// @Description  Возвращает одну заметку по её числовому идентификатору
-// @Tags         notes
-// @Produce      json
-// @Param        id   path      int  true  "Идентификатор заметки"
-// @Success      200  {object}  structs.Note
-// @Failure      400  {string}  string "Неверный ID"
-// @Failure      404  {string}  string "Заметка не найдена"
-// @Router       /notes/{id} [get]
 func (nh *NoteHandler) GetNoteID(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)
@@ -83,31 +61,16 @@ func (nh *NoteHandler) GetNoteID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(note)
 }
 
-// GET получение всех заметок
-// GetAllNote получение всех заметок
-// @Summary      Получить все заметки
-// @Description  Возвращает массив всех сохраненных заметок
-// @Tags         notes
-// @Produce      json
-// @Success      200  {array}   structs.Note
-// @Router       /notes [get]
 func (nh *NoteHandler) GetAllNote(w http.ResponseWriter, r *http.Request) {
-	notes := nh.Store.GetAllNotes()
+	notes, ok := nh.Store.GetAllNotes()
+	if !ok {
+		http.Error(w, "Заметки не найдены", http.StatusBadRequest)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(notes)
 }
 
-// DELETE заметку по id
-// DeleteNote заметку по id
-// @Summary      Удалить заметку
-// @Description  Удаляет заметку из памяти по её ID
-// @Tags         notes
-// @Produce      json
-// @Param        id   path      int  true  "Идентификатор заметки"
-// @Success      200  {object}  map[string]string "status: ok"
-// @Failure      400  {string}  string "Неверный ID"
-// @Failure      404  {string}  string "Заметка не найдена"
-// @Router       /notes/{id} [delete]
 func (nh *NoteHandler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)
@@ -127,19 +90,6 @@ func (nh *NoteHandler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// PUT Полное обновление заметки
-// UpdateNote Полное обновление заметки
-// @Summary      Полностью обновить заметку (PUT)
-// @Description  Заменяет все поля существующей заметки новыми данными. Требует передачи и title, и content.
-// @Tags         notes
-// @Accept       json
-// @Produce      json
-// @Param        id    path      int                true  "Идентификатор заметки"
-// @Param        input body      UpdateNoteRequest  true  "Новые данные заметки"
-// @Success      200   {object}  structs.Note
-// @Failure      400   {string}  string "Неверный ID или формат JSON"
-// @Failure      404   {string}  string "Заметка не найдена"
-// @Router       /notes/{id} [put]
 func (nh *NoteHandler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)
@@ -164,18 +114,6 @@ func (nh *NoteHandler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updateNote)
 }
 
-// PATCH
-// PatchNote Частичное обновление заметки
-// @Summary      Частично обновить заметку (PATCH)
-// @Description  Обновляет только переданные поля заметки (title и/или content). Пропущенные поля остаются без изменений.
-// @Tags         notes
-// @Accept       json
-// @Produce      json
-// @Param        id    path      int               true  "Идентификатор заметки"
-// @Param        input body      PatchNoteRequest  true  "Поля для изменения"
-// @Success      200   {object}  structs.Note
-// @Failure      400   {string}  string "Неверный ID, формат JSON или пустой запрос"
-// @Router       /notes/{id} [patch]
 func (nh *NoteHandler) PatchNote(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)

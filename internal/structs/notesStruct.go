@@ -47,7 +47,7 @@ func (ns *NoteStore) GetOneNote(id int) (Note, bool) {
 }
 
 // Метод для получения всех заметок
-func (ns *NoteStore) GetAllNotes() []Note {
+func (ns *NoteStore) GetAllNotes() ([]Note, bool) {
 	ns.mu.Lock()
 	defer ns.mu.Unlock()
 
@@ -56,7 +56,7 @@ func (ns *NoteStore) GetAllNotes() []Note {
 	for _, v := range ns.data {
 		notes = append(notes, v)
 	}
-	return notes
+	return notes, true
 }
 
 // Удаление заметки
@@ -88,7 +88,7 @@ func (ns *NoteStore) Update(id int, title, content string) (Note, bool) {
 }
 
 // PAtch обновление записи по конкретным параметрам
-func (ns *NoteStore) PatchNote(id int, title *string, context *string) (Note, bool) {
+func (ns *NoteStore) PatchNote(id int, title *string, content *string) (Note, bool) {
 	ns.mu.Lock()
 	defer ns.mu.Unlock()
 
@@ -99,8 +99,8 @@ func (ns *NoteStore) PatchNote(id int, title *string, context *string) (Note, bo
 	if title != nil {
 		note.Title = *title
 	}
-	if context != nil {
-		note.Content = *context
+	if content != nil {
+		note.Content = *content
 	}
 	ns.data[id] = note
 
