@@ -62,15 +62,12 @@ func (nh *NoteHandler) GetNoteID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (nh *NoteHandler) GetAllNote(w http.ResponseWriter, r *http.Request) {
-	notes, ok := nh.Store.GetAllNotes()
-	if !ok {
-		http.Error(w, "Заметки не найдены", http.StatusBadRequest)
-		return
-	}
+	notes := nh.Store.GetAllNotes()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(notes)
 }
 
+// DELETE note (id)
 func (nh *NoteHandler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)
@@ -90,6 +87,7 @@ func (nh *NoteHandler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// PUT note
 func (nh *NoteHandler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)
@@ -114,6 +112,7 @@ func (nh *NoteHandler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updateNote)
 }
 
+// PATCH note
 func (nh *NoteHandler) PatchNote(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)

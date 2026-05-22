@@ -47,7 +47,7 @@ func (ns *NoteStore) GetOneNote(id int) (Note, bool) {
 }
 
 // Метод для получения всех заметок
-func (ns *NoteStore) GetAllNotes() ([]Note, bool) {
+func (ns *NoteStore) GetAllNotes() []Note {
 	ns.mu.Lock()
 	defer ns.mu.Unlock()
 
@@ -56,7 +56,7 @@ func (ns *NoteStore) GetAllNotes() ([]Note, bool) {
 	for _, v := range ns.data {
 		notes = append(notes, v)
 	}
-	return notes, true
+	return notes
 }
 
 // Удаление заметки

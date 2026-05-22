@@ -9,14 +9,8 @@ import (
 	"github.com/Oakey12/myAPIGo/internal/handlers"
 	"github.com/Oakey12/myAPIGo/internal/structs"
 	"github.com/Oakey12/myAPIGo/utils"
-	httpSwagger "github.com/swaggo/http-swagger/v2"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
-
-// @title           Notes API
-// @version         1.0
-// @description     Это учебный REST API сервис для управления заметками.
-// @host            localhost:8012
-// @BasePath        /
 
 func main() {
 
