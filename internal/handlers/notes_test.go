@@ -13,7 +13,7 @@ func TestCreateNote(t *testing.T) {
 	store := structs.NewNoteStore()
 	handler := &NoteHandler{Store: store}
 
-	jsonBody := []byte(`{"title": "Учеба", "content": "Повторить Go"}`)
+	jsonBody := []byte(`{"title": "test", "content": "test"}`)
 
 	req := httptest.NewRequest(http.MethodPost, "/notes", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -78,4 +78,103 @@ func TestGetNoteID(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDeleteNote(t *testing.T) {
+	store := structs.NewNoteStore()
+	handler := &NoteHandler{Store: store}
+
+	store.SaveNote("Заметка под удаление", "Текст заметки")
+	mux := http.NewServeMux()
+	mux.HandleFunc("DELETE /notes/{id}", handler.DeleteNote)
+
+	test := []struct {
+		name           string
+		url            string
+		expectedStatus int
+	}{
+		{
+			name:           "Позитивный: Успешное удаление существующей заметки",
+			url:            "/notes/1",
+			expectedStatus: http.StatusOK, // Ожидаем 200
+		},
+		{
+			name:           "Негативный: Попытка удалить несуществующий ID",
+			url:            "/notes/999",
+			expectedStatus: http.StatusNotFound, // Ожидаем 404
+		},
+		{
+			name:           "Негативный: Передача текста вместо числового ID",
+			url:            "/notes/abc",
+			expectedStatus: http.StatusBadRequest, // Ожидаем 400
+		},
+		{
+			name:           "Негативный: Передача отрицательного ID",
+			url:            "/notes/-5",
+			expectedStatus: http.StatusBadRequest, // Ожидаем 400
+		},
+	}
+	for _, tc := range test {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodDelete, tc.url, nil)
+			rr := httptest.NewRecorder()
+
+			mux.ServeHTTP(rr, req)
+
+			if rr.Code != tc.expectedStatus {
+				t.Errorf("Сценарий '%s' провален: ожидался статус %d, получен %d", tc.name, tc.expectedStatus, rr.Code)
+			}
+		})
+	}
+	remainingNotes := store.GetAllNotes()
+	if len(remainingNotes) != 0 {
+		t.Errorf("После успешного удаления в хранилище остались записи. Ожидалось 0, найдено %d", len(remainingNotes))
+	}
+}
+
+func TestUpdateNote(t *testing.T) {
+	store := structs.NewNoteStore()
+	handler := &NoteHandler{Store: store}
+
+	store.SaveNote("Старый заголовок", "Старый текст")
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("PUT /notes/{id}", handler.UpdateNote)
+
+	tests := []struct {
+		name           string
+		url            string
+		body           []byte
+		expectedStatus int
+	}{
+		{
+			name:           "Позитивный: успешное обновление",
+			url:            "/notes/1",
+			body:           []byte(`{"title": "Новый заголовок", "content": "Новый текст"}`),
+			expectedStatus: http.StatusOK, // ожидаемый статус 200
+		},
+	}
+	for _, ts := range tests {
+		t.Run(ts.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPut, ts.url, bytes.NewBuffer(ts.body))
+			req.Header.Set("Content-Type", "application/json")
+
+			rr := httptest.NewRecorder()
+			mux.ServeHTTP(rr, req)
+
+			if rr.Code != ts.expectedStatus {
+				t.Errorf("Сценарий '%s' провален: ожидался статус %d, получен %d", ts.name, ts.expectedStatus, rr.Code)
+			}
+		})
+
+	}
+	updatedNote, ok := store.GetOneNote(1)
+	if !ok {
+		t.Fatalf("Заметка была удалена или не найдена")
+	}
+
+	if updatedNote.Title != "Новый заголовок" {
+		t.Errorf("Поле Title не обновилось. Текущее значение: %s", updatedNote.Title)
+	}
+
 }
