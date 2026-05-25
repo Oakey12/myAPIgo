@@ -178,3 +178,64 @@ func TestUpdateNote(t *testing.T) {
 	}
 
 }
+
+func TestPartialUpdateNote(t *testing.T) {
+	store := structs.NewNoteStore()
+	handler := &NoteHandler{Store: store}
+
+	store.SaveNote("Тестовый заголовок", "Тестовый текст")
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("PATCH /notes/{id}", handler.PatchNote)
+
+	tests := []struct {
+		name           string
+		url            string
+		body           []byte
+		expectedStatus int
+	}{
+		{
+			name:           "Позитивный: обновление только заголовка",
+			url:            "/notes/1",
+			body:           []byte(`{"title": "Новый заголовок"`),
+			expectedStatus: http.StatusOK, // ожидаемый статус 200
+		},
+		{
+			name:           "Позитивный: обновление только текста",
+			url:            "/notes/1",
+			body:           []byte(`{"content: Новый текст"}`),
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Позитивный: Обновление обоих полей",
+			url:            "/notes/1",
+			body:           []byte(`{"title": "Новое имя", "content": "Новое описание"}`),
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Негативный: Пустой запрос (оба поля nil)",
+			url:            "/notes/1",
+			body:           []byte(`{}`),
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "Негативный: Обновление несуществующей записи",
+			url:            "/notes/999",
+			body:           []byte(`{"title": "Тест"}`),
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+	for _, ts := range tests {
+		t.Run(ts.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPatch, ts.url, bytes.NewBuffer(ts.body))
+			req.Header.Set("Content-Type", "application/json")
+
+			rr := httptest.NewRecorder()
+			mux.ServeHTTP(rr, req)
+
+			if rr.Code != ts.expectedStatus {
+				t.Errorf("Сценарий '%s' провален: ожидался статус %d, получен %d", ts.name, ts.expectedStatus, rr.Code)
+			}
+		})
+	}
+}
