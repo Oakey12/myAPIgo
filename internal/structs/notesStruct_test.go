@@ -101,3 +101,24 @@ func TestUpdateNote(t *testing.T) {
 		t.Errorf("Текст не обновился! Ожидалось 'Новый контент', получено '%s'", updateNote.Content)
 	}
 }
+
+func TestPatchNote(t *testing.T) {
+	store := NewNoteStore()
+
+	firstNote := store.SaveNote("Старый заголовок", "Старый текст")
+
+	titleUp := "Новый Заголовок"
+
+	updateNote, ok := store.PatchNote(firstNote.ID, &titleUp, nil)
+	if !ok {
+		t.Fatalf("Заметка по ID: %d исчезла после обновления", firstNote.ID)
+	}
+
+	if updateNote.Title != titleUp {
+		t.Errorf("Заголовок не обновился. Заголовок сейчас: %s", updateNote.Title)
+	}
+	if updateNote.Content != "Старый текст" {
+		t.Errorf("Текст должен был остаться старым, но он изменился на '%s'", updateNote.Content)
+	}
+
+}
