@@ -26,3 +26,28 @@ func TestSaveNote(t *testing.T) {
 	}
 
 }
+
+func TestGetOneNote(t *testing.T) {
+	store := NewNoteStore()
+
+	title := "Тестовый заголовок"
+	content := "Тестовый контент"
+
+	newNote := store.SaveNote(title, content) // новая заметка
+
+	getNote, ok := store.GetOneNote(newNote.ID) // заметка, которую хотим получить
+	if !ok {
+		t.Errorf("Не удалось получить заметку с ID %d", newNote.ID)
+	}
+	if getNote.Title != newNote.Title {
+		t.Errorf("Не совпадают заголовки")
+	}
+	if getNote.ID != newNote.ID {
+		t.Errorf("ID заметки для получения совпадает с ID созданной заметки")
+	}
+	_, ok = store.GetOneNote(999)
+	if ok {
+		t.Errorf("Ожидалось, что заметка с ID 999 не будет найдена, но она нашлась")
+	}
+
+}
