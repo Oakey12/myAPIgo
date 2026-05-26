@@ -1,12 +1,14 @@
 package structs
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestSaveNote(t *testing.T) {
 	store := NewNoteStore()
 
 	title := "Тестовая заметка"
-	content := "Тестовый онтент"
+	content := "Тестовый контент"
 
 	saveNote := store.SaveNote(title, content)
 
