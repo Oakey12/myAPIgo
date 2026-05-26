@@ -197,13 +197,13 @@ func TestPartialUpdateNote(t *testing.T) {
 		{
 			name:           "Позитивный: обновление только заголовка",
 			url:            "/notes/1",
-			body:           []byte(`{"title": "Новый заголовок"`),
+			body:           []byte(`{"title": "Новый заголовок"}`),
 			expectedStatus: http.StatusOK, // ожидаемый статус 200
 		},
 		{
 			name:           "Позитивный: обновление только текста",
 			url:            "/notes/1",
-			body:           []byte(`{"content: Новый текст"}`),
+			body:           []byte(`{"content": "Новый текст"}`),
 			expectedStatus: http.StatusOK,
 		},
 		{
@@ -237,5 +237,25 @@ func TestPartialUpdateNote(t *testing.T) {
 				t.Errorf("Сценарий '%s' провален: ожидался статус %d, получен %d", ts.name, ts.expectedStatus, rr.Code)
 			}
 		})
+	}
+}
+
+func TestGetAllNote(t *testing.T) {
+	store := structs.NewNoteStore()
+
+	store.SaveNote("Первая заметка", "Текстовый 1")
+	store.SaveNote("Вторая заметка", "Текстовый 2")
+
+	handler := &NoteHandler{Store: store}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /notes", handler.GetAllNote)
+
+	req := httptest.NewRequest(http.MethodGet, "/notes", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("Ожидался статус 200 OK, получен %v", status)
 	}
 }
