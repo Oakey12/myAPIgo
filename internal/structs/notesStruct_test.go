@@ -51,3 +51,53 @@ func TestGetOneNote(t *testing.T) {
 	}
 
 }
+
+func TestGetAllNote(t *testing.T) {
+	store := NewNoteStore()
+
+	store.SaveNote("Первая", "Текст 1")
+	store.SaveNote("Вторая", "Текст 2")
+	store.SaveNote("Третья", "Текст 3")
+
+	notes := store.GetAllNotes()
+
+	if len(notes) != 3 {
+		t.Errorf("Ожидалось 3 заметки, а получили %d", len(notes))
+	}
+}
+
+func TestDeleteNote(t *testing.T) {
+	store := NewNoteStore()
+
+	newNote := store.SaveNote("Тестовый текст", "Тестовый текст")
+
+	store.Delete(newNote.ID)
+
+	_, err := store.GetOneNote(newNote.ID)
+	if err {
+		t.Errorf("Заметка с ID %d всё ещё существует в базе после удаления", newNote.ID)
+	}
+	notes := store.GetAllNotes()
+	if len(notes) != 0 {
+		t.Errorf("Ожидалось 0 заметок в пустой базе, но найдено %d", len(notes))
+	}
+}
+
+func TestUpdateNote(t *testing.T) {
+	store := NewNoteStore()
+
+	newNote := store.SaveNote("Тестовый текст", "Тестовый текст")
+
+	store.Update(newNote.ID, "Новый заголовок", "Новый контент")
+
+	updateNote, ok := store.GetOneNote(newNote.ID)
+	if !ok {
+		t.Fatalf("Заметка по ID: %d исчезла после обновления", newNote.ID)
+	}
+	if updateNote.Title != "Новый заголовок" {
+		t.Errorf("Заголовок не обновился! Ожидалось 'Новый заголовок', получено '%s'", updateNote.Title)
+	}
+	if updateNote.Content != "Новый контент" {
+		t.Errorf("Текст не обновился! Ожидалось 'Новый контент', получено '%s'", updateNote.Content)
+	}
+}
