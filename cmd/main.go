@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,11 +11,15 @@ import (
 	"github.com/Oakey12/myAPIGo/internal/structs"
 	"github.com/Oakey12/myAPIGo/utils"
 	httpSwagger "github.com/swaggo/http-swagger"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
 
-	store := structs.NewNoteStore()
+	db := initBD("./notes.db")
+	defer db.Close()
+
+	store := structs.NewNoteStore(db)
 
 	noteHandler := &handlers.NoteHandler{Store: store}
 
@@ -40,4 +45,27 @@ func main() {
 	if err := http.ListenAndServe(":8012", handler); err != nil {
 		log.Fatal(err)
 	}
+
+}
+
+func initBD(filePath string) *sql.DB {
+	db, err := sql.Open("sqlite", filePath)
+	if err != nil {
+		log.Fatalf("Ошибка подключения к базе данных %v", err)
+	}
+
+	createTableSQL := `
+	CREATE TABLE IF NOT EXISTS notes (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		title TEXT NOT NULL,
+		content TEXT NOT NULL
+	);`
+
+	_, err = db.Exec(createTableSQL)
+	if err != nil {
+		log.Fatalf("Ошибка при создании таблицы %v", err)
+	}
+
+	log.Println("База данных успешно инициализирована и таблица готова")
+	return db
 }

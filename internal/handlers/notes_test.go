@@ -2,15 +2,36 @@ package handlers
 
 import (
 	"bytes"
+	"database/sql"
+	"github.com/Oakey12/myAPIGo/internal/structs"
+	_ "modernc.org/sqlite"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/Oakey12/myAPIGo/internal/structs"
 )
 
+func createTestBD(t *testing.T) *sql.DB {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("Не удалось создать БД: %v", err)
+	}
+	createBDSQL := `CREATE TABLE notes (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		title TEXT NOT NULL,
+		content TEXT NOT NULL
+	);`
+
+	if _, err := db.Exec(createBDSQL); err != nil {
+		t.Fatalf("Ошибка при создании тестовой таблицы: %v", err)
+	}
+	return db
+}
+
 func TestCreateNote(t *testing.T) {
-	store := structs.NewNoteStore()
+	db := createTestBD(t)
+	defer db.Close()
+
+	store := structs.NewNoteStore(db)
 	handler := &NoteHandler{Store: store}
 
 	jsonBody := []byte(`{"title": "test", "content": "test"}`)
@@ -32,10 +53,13 @@ func TestCreateNote(t *testing.T) {
 }
 
 func TestGetNoteID(t *testing.T) {
-	store := structs.NewNoteStore()
+	db := createTestBD(t)
+	defer db.Close()
+
+	store := structs.NewNoteStore(db)
 	handler := &NoteHandler{Store: store}
 
-	store.SaveNote("Тестовый заголовок", "Тестовый контент")
+	store.CreateNote("Тестовый заголовок", "Тестовый контент")
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /notes/{id}", handler.GetNoteID)
 
@@ -81,10 +105,11 @@ func TestGetNoteID(t *testing.T) {
 }
 
 func TestDeleteNote(t *testing.T) {
-	store := structs.NewNoteStore()
+	db := createTestBD(t)
+	store := structs.NewNoteStore(db)
 	handler := &NoteHandler{Store: store}
 
-	store.SaveNote("Заметка под удаление", "Текст заметки")
+	store.CreateNote("Заметка под удаление", "Текст заметки")
 	mux := http.NewServeMux()
 	mux.HandleFunc("DELETE /notes/{id}", handler.DeleteNote)
 
@@ -133,10 +158,11 @@ func TestDeleteNote(t *testing.T) {
 }
 
 func TestUpdateNote(t *testing.T) {
-	store := structs.NewNoteStore()
+	db := createTestBD(t)
+	store := structs.NewNoteStore(db)
 	handler := &NoteHandler{Store: store}
 
-	store.SaveNote("Старый заголовок", "Старый текст")
+	store.CreateNote("Старый заголовок", "Старый текст")
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("PUT /notes/{id}", handler.UpdateNote)
@@ -168,7 +194,7 @@ func TestUpdateNote(t *testing.T) {
 		})
 
 	}
-	updatedNote, ok := store.GetOneNote(1)
+	updatedNote, ok := store.GetNoteID(1)
 	if !ok {
 		t.Fatalf("Заметка была удалена или не найдена")
 	}
@@ -180,10 +206,11 @@ func TestUpdateNote(t *testing.T) {
 }
 
 func TestPartialUpdateNote(t *testing.T) {
-	store := structs.NewNoteStore()
+	db := createTestBD(t)
+	store := structs.NewNoteStore(db)
 	handler := &NoteHandler{Store: store}
 
-	store.SaveNote("Тестовый заголовок", "Тестовый текст")
+	store.CreateNote("Тестовый заголовок", "Тестовый текст")
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("PATCH /notes/{id}", handler.PatchNote)
@@ -241,10 +268,11 @@ func TestPartialUpdateNote(t *testing.T) {
 }
 
 func TestGetAllNote(t *testing.T) {
-	store := structs.NewNoteStore()
+	db := createTestBD(t)
+	store := structs.NewNoteStore(db)
 
-	store.SaveNote("Первая заметка", "Текстовый 1")
-	store.SaveNote("Вторая заметка", "Текстовый 2")
+	store.CreateNote("Первая заметка", "Текстовый 1")
+	store.CreateNote("Вторая заметка", "Текстовый 2")
 
 	handler := &NoteHandler{Store: store}
 

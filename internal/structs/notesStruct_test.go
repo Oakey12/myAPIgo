@@ -1,16 +1,38 @@
 package structs
 
 import (
+	"database/sql"
+	_ "modernc.org/sqlite"
 	"testing"
 )
 
-func TestSaveNote(t *testing.T) {
-	store := NewNoteStore()
+func createTestBD(t *testing.T) *sql.DB {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("Не удалось создать БД: %v", err)
+	}
+	createBDSQL := `CREATE TABLE notes (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		title TEXT NOT NULL,
+		content TEXT NOT NULL
+	);`
+
+	if _, err := db.Exec(createBDSQL); err != nil {
+		t.Fatalf("Ошибка при создании тестовой таблицы: %v", err)
+	}
+	return db
+}
+
+func TestCreateNote(t *testing.T) {
+	db := createTestBD(t)
+	defer db.Close()
+
+	store := NewNoteStore(db)
 
 	title := "Тестовая заметка"
 	content := "Тестовый контент"
 
-	saveNote := store.SaveNote(title, content)
+	saveNote := store.CreateNote(title, content)
 
 	if saveNote.ID != 1 {
 		t.Errorf("Ожидался ID 1, получен %d", saveNote.ID)
@@ -28,14 +50,17 @@ func TestSaveNote(t *testing.T) {
 }
 
 func TestGetOneNote(t *testing.T) {
-	store := NewNoteStore()
+	db := createTestBD(t)
+	defer db.Close()
+
+	store := NewNoteStore(db)
 
 	title := "Тестовый заголовок"
 	content := "Тестовый контент"
 
-	newNote := store.SaveNote(title, content) // новая заметка
+	newNote := store.CreateNote(title, content) // новая заметка
 
-	getNote, ok := store.GetOneNote(newNote.ID) // заметка, которую хотим получить
+	getNote, ok := store.GetNoteID(newNote.ID) // заметка, которую хотим получить
 	if !ok {
 		t.Errorf("Не удалось получить заметку с ID %d", newNote.ID)
 	}
@@ -45,7 +70,7 @@ func TestGetOneNote(t *testing.T) {
 	if getNote.ID != newNote.ID {
 		t.Errorf("ID заметки для получения совпадает с ID созданной заметки")
 	}
-	_, ok = store.GetOneNote(999)
+	_, ok = store.GetNoteID(999)
 	if ok {
 		t.Errorf("Ожидалось, что заметка с ID 999 не будет найдена, но она нашлась")
 	}
@@ -53,11 +78,14 @@ func TestGetOneNote(t *testing.T) {
 }
 
 func TestGetAllNote(t *testing.T) {
-	store := NewNoteStore()
+	db := createTestBD(t)
+	defer db.Close()
 
-	store.SaveNote("Первая", "Текст 1")
-	store.SaveNote("Вторая", "Текст 2")
-	store.SaveNote("Третья", "Текст 3")
+	store := NewNoteStore(db)
+
+	store.CreateNote("Первая", "Текст 1")
+	store.CreateNote("Вторая", "Текст 2")
+	store.CreateNote("Третья", "Текст 3")
 
 	notes := store.GetAllNotes()
 
@@ -67,13 +95,16 @@ func TestGetAllNote(t *testing.T) {
 }
 
 func TestDeleteNote(t *testing.T) {
-	store := NewNoteStore()
+	db := createTestBD(t)
+	defer db.Close()
 
-	newNote := store.SaveNote("Тестовый текст", "Тестовый текст")
+	store := NewNoteStore(db)
 
-	store.Delete(newNote.ID)
+	newNote := store.CreateNote("Тестовый текст", "Тестовый текст")
 
-	_, err := store.GetOneNote(newNote.ID)
+	store.DeleteNoteID(newNote.ID)
+
+	_, err := store.GetNoteID(newNote.ID)
 	if err {
 		t.Errorf("Заметка с ID %d всё ещё существует в базе после удаления", newNote.ID)
 	}
@@ -84,13 +115,16 @@ func TestDeleteNote(t *testing.T) {
 }
 
 func TestUpdateNote(t *testing.T) {
-	store := NewNoteStore()
+	db := createTestBD(t)
+	defer db.Close()
 
-	newNote := store.SaveNote("Тестовый текст", "Тестовый текст")
+	store := NewNoteStore(db)
+
+	newNote := store.CreateNote("Тестовый текст", "Тестовый текст")
 
 	store.Update(newNote.ID, "Новый заголовок", "Новый контент")
 
-	updateNote, ok := store.GetOneNote(newNote.ID)
+	updateNote, ok := store.GetNoteID(newNote.ID)
 	if !ok {
 		t.Fatalf("Заметка по ID: %d исчезла после обновления", newNote.ID)
 	}
@@ -103,9 +137,12 @@ func TestUpdateNote(t *testing.T) {
 }
 
 func TestPatchNote(t *testing.T) {
-	store := NewNoteStore()
+	db := createTestBD(t)
+	defer db.Close()
 
-	firstNote := store.SaveNote("Старый заголовок", "Старый текст")
+	store := NewNoteStore(db)
+
+	firstNote := store.CreateNote("Старый заголовок", "Старый текст")
 
 	titleUp := "Новый Заголовок"
 

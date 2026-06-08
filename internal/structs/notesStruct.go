@@ -1,7 +1,8 @@
 package structs
 
 import (
-	"sync"
+	"database/sql"
+	"log"
 )
 
 type Note struct {
@@ -10,99 +11,118 @@ type Note struct {
 	Content string `json:"content"`
 }
 type NoteStore struct {
-	mu     sync.RWMutex
-	data   map[int]Note
-	lastId int
+	db *sql.DB
 }
 
-func NewNoteStore() *NoteStore {
-	return &NoteStore{
-		data: make(map[int]Note),
-	}
+func NewNoteStore(db *sql.DB) *NoteStore {
+	return &NoteStore{db: db}
 }
 
 // Метод для добавления новой заметки
-func (ns *NoteStore) SaveNote(title, content string) Note {
-	ns.mu.Lock()
-	defer ns.mu.Unlock()
+func (ns *NoteStore) CreateNote(title, content string) Note {
+	query := "INSERT INTO notes (title, content) VALUES (?, ?)"
 
-	ns.lastId++
+	result, err := ns.db.Exec(query, title, content)
+	if err != nil {
+		log.Println("Ошибка записи в БД", err)
+		return Note{}
+	}
 
-	note := Note{
-		ID:      ns.lastId,
+	id, err := result.LastInsertId()
+	return Note{
+		ID:      int(id),
 		Title:   title,
 		Content: content,
 	}
-	ns.data[note.ID] = note
-	return note
 }
 
 // метод для получения одной заметки по ID
-func (ns *NoteStore) GetOneNote(id int) (Note, bool) {
-	ns.mu.Lock()
-	defer ns.mu.Unlock()
+func (ns *NoteStore) GetNoteID(id int) (Note, bool) {
+	query := "SELECT id, title, content FROM notes WHERE id = ?"
+	row := ns.db.QueryRow(query, id)
 
-	note, ok := ns.data[id]
-	return note, ok
+	var note Note
+
+	err := row.Scan(&note.ID, &note.Title, &note.Content)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return Note{}, false
+		}
+		log.Println("Ошибка чтения из БД", err)
+		return Note{}, false
+	}
+	return note, true
 }
 
 // Метод для получения всех заметок
 func (ns *NoteStore) GetAllNotes() []Note {
-	ns.mu.Lock()
-	defer ns.mu.Unlock()
+	query := "SELECT id, title, content FROM notes"
 
-	notes := make([]Note, 0, len(ns.data))
+	rows, err := ns.db.Query(query)
+	if err != nil {
+		log.Println("Ошибка запроса всех заметок:", err)
+		return []Note{}
+	}
+	defer rows.Close()
+	var notes []Note
 
-	for _, v := range ns.data {
-		notes = append(notes, v)
+	for rows.Next() {
+		var note Note
+		if err := rows.Scan(&note.ID, &note.Title, &note.Content); err != nil {
+			continue
+		}
+		notes = append(notes, note)
+	}
+	if notes == nil {
+		notes = []Note{}
 	}
 	return notes
+
 }
 
 // Удаление заметки
-func (ns *NoteStore) Delete(id int) bool {
-	ns.mu.Lock()
-	defer ns.mu.Unlock()
-
-	_, ok := ns.data[id]
-	if ok {
-		delete(ns.data, id)
+func (ns *NoteStore) DeleteNoteID(id int) bool {
+	query := "DELETE FROM notes WHERE id = ?"
+	result, err := ns.db.Exec(query, id)
+	if err != nil {
+		log.Println("Ошибка удаления", err)
+		return false
 	}
-	return ok
+	rowsDel, err := result.RowsAffected()
+	if err != nil {
+		return false
+	}
+	return rowsDel > 0
+
 }
 
 // метод для полного изменения заметки PUT
 func (ns *NoteStore) Update(id int, title, content string) (Note, bool) {
-	ns.mu.Lock()
-	defer ns.mu.Unlock()
-
-	_, ok := ns.data[id]
-	if !ok {
+	query := "UPDATE notes SET title = ?, content = ? WHERE id = ?"
+	result, err := ns.db.Exec(query, title, content, id)
+	if err != nil {
+		log.Println("Ошибка обновления", err)
 		return Note{}, false
 	}
-
-	updateNote := Note{ID: id, Title: title, Content: content}
-	ns.data[id] = updateNote
-	return updateNote, true
+	rowsUp, err := result.RowsAffected()
+	if err != nil || rowsUp == 0 {
+		return Note{}, false
+	}
+	return Note{ID: id, Title: title, Content: content}, true
 
 }
 
 // PAtch обновление записи по конкретным параметрам
 func (ns *NoteStore) PatchNote(id int, title *string, content *string) (Note, bool) {
-	ns.mu.Lock()
-	defer ns.mu.Unlock()
-
-	note, ok := ns.data[id]
+	currentNote, ok := ns.GetNoteID(id)
 	if !ok {
 		return Note{}, false
 	}
 	if title != nil {
-		note.Title = *title
+		currentNote.Title = *title
 	}
 	if content != nil {
-		note.Content = *content
+		currentNote.Content = *content
 	}
-	ns.data[id] = note
-
-	return note, true
+	return ns.Update(id, currentNote.Title, currentNote.Content)
 }

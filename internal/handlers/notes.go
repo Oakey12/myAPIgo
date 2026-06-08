@@ -25,6 +25,7 @@ type PatchNoteRequest struct {
 	Content *string `json:"content" example:"Новый контент заметки"`
 }
 
+// Создание заметки
 func (nh *NoteHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 	var request CreateNoteRequest
 
@@ -39,12 +40,13 @@ func (nh *NoteHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createNote := nh.Store.SaveNote(request.Title, request.Content)
+	createNote := nh.Store.CreateNote(request.Title, request.Content)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createNote)
 }
 
+// Получение заметки по ID
 func (nh *NoteHandler) GetNoteID(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)
@@ -52,7 +54,7 @@ func (nh *NoteHandler) GetNoteID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Неверный ID", http.StatusBadRequest)
 		return
 	}
-	note, ok := nh.Store.GetOneNote(id)
+	note, ok := nh.Store.GetNoteID(id)
 	if !ok {
 		http.Error(w, "Заметка не найдена", http.StatusNotFound)
 		return
@@ -76,7 +78,7 @@ func (nh *NoteHandler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deleted := nh.Store.Delete(id)
+	deleted := nh.Store.DeleteNoteID(id)
 	if !deleted {
 		http.Error(w, "Заметка не найдена", http.StatusNotFound)
 		return
