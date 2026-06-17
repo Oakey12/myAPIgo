@@ -40,7 +40,12 @@ func (nh *NoteHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createNote := nh.Store.CreateNote(request.Title, request.Content)
+	createNote, err := nh.Store.CreateNote(request.Title, request.Content)
+	if err != nil {
+		http.Error(w, "Ошибка при сохранении заметки на диск", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createNote)
@@ -48,8 +53,7 @@ func (nh *NoteHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 
 // Получение заметки по ID
 func (nh *NoteHandler) GetNoteID(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := parseID(r)
 	if err != nil || id <= 0 {
 		http.Error(w, "Неверный ID", http.StatusBadRequest)
 		return
@@ -71,8 +75,7 @@ func (nh *NoteHandler) GetAllNote(w http.ResponseWriter, r *http.Request) {
 
 // DELETE note (id)
 func (nh *NoteHandler) DeleteNote(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := parseID(r)
 	if err != nil || id <= 0 {
 		http.Error(w, "Неверный ID", http.StatusBadRequest)
 		return
@@ -91,8 +94,7 @@ func (nh *NoteHandler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 
 // PUT note
 func (nh *NoteHandler) UpdateNote(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := parseID(r)
 	if err != nil {
 		http.Error(w, "Неверный ID", http.StatusBadRequest)
 		return
@@ -107,7 +109,7 @@ func (nh *NoteHandler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	updateNote, ok := nh.Store.Update(id, req.Title, req.Content)
 	if !ok {
-		http.Error(w, "Заметка не найдена", http.StatusNotFound)
+		http.Error(w, "Заметка не найдена", http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -116,8 +118,7 @@ func (nh *NoteHandler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 
 // PATCH note
 func (nh *NoteHandler) PatchNote(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := parseID(r)
 	if err != nil {
 		http.Error(w, "Неверный ID", http.StatusBadRequest)
 		return
@@ -144,4 +145,14 @@ func (nh *NoteHandler) PatchNote(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(updateNote)
 
+}
+
+// Универсальный переходник: достает ID из запроса и возвращает его в виде числа
+func parseID(r *http.Request) (int, error) {
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		return 0, err
+	}
+	return id, nil
 }

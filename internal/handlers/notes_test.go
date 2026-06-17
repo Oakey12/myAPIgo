@@ -3,11 +3,12 @@ package handlers
 import (
 	"bytes"
 	"database/sql"
-	"github.com/Oakey12/myAPIGo/internal/structs"
-	_ "modernc.org/sqlite"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/Oakey12/myAPIGo/internal/structs"
+	_ "modernc.org/sqlite"
 )
 
 func createTestBD(t *testing.T) *sql.DB {
@@ -119,11 +120,6 @@ func TestDeleteNote(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "Позитивный: Успешное удаление существующей заметки",
-			url:            "/notes/1",
-			expectedStatus: http.StatusOK, // Ожидаем 200
-		},
-		{
 			name:           "Негативный: Попытка удалить несуществующий ID",
 			url:            "/notes/999",
 			expectedStatus: http.StatusNotFound, // Ожидаем 404
@@ -137,6 +133,11 @@ func TestDeleteNote(t *testing.T) {
 			name:           "Негативный: Передача отрицательного ID",
 			url:            "/notes/-5",
 			expectedStatus: http.StatusBadRequest, // Ожидаем 400
+		},
+		{
+			name:           "Позитивный: Успешное удаление существующей заметки",
+			url:            "/notes/1",
+			expectedStatus: http.StatusOK, // Ожидаем 200
 		},
 	}
 	for _, tc := range test {
@@ -249,7 +250,7 @@ func TestPartialUpdateNote(t *testing.T) {
 			name:           "Негативный: Обновление несуществующей записи",
 			url:            "/notes/999",
 			body:           []byte(`{"title": "Тест"}`),
-			expectedStatus: http.StatusBadRequest,
+			expectedStatus: http.StatusNotFound,
 		},
 	}
 	for _, ts := range tests {
