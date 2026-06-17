@@ -19,21 +19,26 @@ func NewNoteStore(db *sql.DB) *NoteStore {
 }
 
 // Метод для добавления новой заметки
-func (ns *NoteStore) CreateNote(title, content string) Note {
+func (ns *NoteStore) CreateNote(title, content string) (Note, error) {
 	query := "INSERT INTO notes (title, content) VALUES (?, ?)"
 
 	result, err := ns.db.Exec(query, title, content)
 	if err != nil {
 		log.Println("Ошибка записи в БД", err)
-		return Note{}
+		return Note{}, err
 	}
 
 	id, err := result.LastInsertId()
+	if err != nil {
+		log.Println("Ошибка получения LastInsertId:", err)
+		return Note{}, err
+	}
+
 	return Note{
 		ID:      int(id),
 		Title:   title,
 		Content: content,
-	}
+	}, nil
 }
 
 // метод для получения одной заметки по ID
@@ -73,6 +78,12 @@ func (ns *NoteStore) GetAllNotes() []Note {
 		}
 		notes = append(notes, note)
 	}
+
+	if err := rows.Err(); err != nil {
+		log.Println("Критическая ошибка во время чтения строк:", err)
+		return []Note{}
+	}
+
 	if notes == nil {
 		notes = []Note{}
 	}
